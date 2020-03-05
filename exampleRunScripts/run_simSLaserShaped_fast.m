@@ -26,16 +26,18 @@
 % simulation many times at various points in space (x,y), and then add
 % together the resulting spectra and scale down by the number of simulations.
 %
+% Feb 2020 - Jamie Near:  This code now accepts gradient modulated pulses.  
+%
 
 %tic;
 
 % INPUTS:
 n=4096; %= number of points in fid/spectrum
 sw=5000; %= desired spectral width in [Hz]
-Bfield=3; %= main magnetic field strength in [T]
+Bfield=7; %= main magnetic field strength in [T]
 lw=2; %= linewidth in [Hz]
 load spinSystems.mat; %= spin system definition structure
-sys=sysGABA;
+sys=sysLac;
 rfPulse=io_loadRFwaveform('sampleAFPpulse_HS2_R15.RF','inv'); % adiabatic RF pulse shaped waveform
 refTp=3.5; %= RF pulse duration in [ms]
 flipAngle=180; %= flip angle of refocusing pulses [degrees] (Optional.  Default = 180 deg)
@@ -46,7 +48,7 @@ fovX=3; %size of the full simulation Field of View in the x-direction [cm]
 fovY=3; %size of the full simulation Field of View in the y-direction [cm]
 nX=16; %Number of grid points to simulate in the x-direction
 nY=16; %Number of grid points to simulate in the y-direction
-te=68;         %sLASER total echo time [ms]
+te=135;         %sLASER total echo time [ms]
 ph1=[0 0 0 0];  %phase cycling scheme of first refocusing pulse
 ph2=[0 0 90 90]; %phase cycling scheme of second refocusing pulse
 ph3=[0 0 0 0]; %phase cycling scheme of third refocusing pulse
@@ -67,9 +69,17 @@ gamma=42577000; %gyromagnetic ratio
 rfPulse=rf_resample(rfPulse,100);
 
 %sys=sysRef0ppm
-
-Gx=(rfPulse.tbw/(refTp/1000))/(gamma*thkX/10000); %[G/cm]
-Gy=(rfPulse.tbw/(refTp/1000))/(gamma*thkY/10000); %[G/cm]
+if ~rfPulse.isGM
+    %Non-gradient modulated pulse - Calculating the x and y gradient 
+    %strengths for the desired slice thickness
+    Gx=(rfPulse.tbw/(refTp/1000))/(gamma*thkX/10000); %[G/cm]
+    Gy=(rfPulse.tbw/(refTp/1000))/(gamma*thkY/10000); %[G/cm]
+else
+    %Gradient modulated pulse
+    %1.  Calculating the unitless scaling factor for the GM waveform.
+    Gx=(rfPulse.tthk/refTp/1000)/thkX;
+    Gy=(rfPulse.tthk/refTp/1000)/thkY;
+end
 
 %Initialize structures:
 % out_posxy_rpc=cell(length(x),length(y),length(ph1));
@@ -153,6 +163,13 @@ if nargin<21
     end
 end
 
+%Check if this is a gradient modulated pulse.  If so, set Gx equal to zero:
+if RF.isGM
+    %Scale the GM waveform by the factor Gx and then set Gx equal to zero:
+    RF=rf_scaleGrad(RF,Gx);
+    Gx=0;
+end
+
 if (te/4)<(tp/1000)
     error('ERROR: the duration of the refocusing pulse cannot be longer than a quarter of the echo time! ABORTING!!');
 end
@@ -189,6 +206,13 @@ if nargin<21
     end
 end
 
+%Check if this is a gradient modulated pulse.  If so, set Gy equal to zero:
+if RF.isGM
+    %Scale the GM waveform by the factor Gy and then set Gy equal to zero:
+    RF=rf_scaleGrad(RF,Gy);
+    Gy=0;
+end
+
 if (te/4)<(tp/1000)
     error('ERROR: the duration of the refocusing pulse cannot be longer than a quarter of the echo time! ABORTING!!');
 end
@@ -215,7 +239,7 @@ d=sim_evolve(d,H,tau1/1000);                            %Evolve by tau1
 %END PULSE SEQUENCE**************
 
 %Correct the ppm scale:
-out.ppm=out.ppm-(4.68-centreFreq);
+out.ppm=out.ppm-(4.65-centreFreq);
 
 %Fill in structure header fields:
 out.seq='semi-LASER';

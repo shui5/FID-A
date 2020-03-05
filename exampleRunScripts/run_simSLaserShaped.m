@@ -22,6 +22,10 @@
 % to fully simulate the sLASER experiment, you have to run this
 % simulation many times at various points in space (x,y), and then add
 % together the resulting spectra and scale down by the number of simulations. 
+%
+% Feb 2020 - Jamie Near:  This code now accepts gradient modulated pulses.  
+%
+
 % 
 % INPUTS:
 
@@ -31,12 +35,12 @@ Bfield=7; %= main magnetic field strength in [T]
 lw=2; %= linewidth in [Hz]
 load spinSystems.mat; %= spin system definition structure
 sys=sysLac;
-rfPulse=io_loadRFwaveform('sampleAFPpulse_HS2_R15.RF','inv'); % adiabatic RF pulse shaped waveform 
-refTp=3.5; %= RF pulse duration in [ms]
+rfPulse=io_loadRFwaveform('sampleAFPpulse_HS2_R15.RF','inv'); % gradient_modulated adiabatic RF pulse shaped waveform 
+refTp=3.5; %= RF pulse duration in [ms]  
 flipAngle=180; %= flip angle of refocusing pulses [degrees] (Optional.  Default = 180 deg)
 centreFreq=2.3; %= centre frequency of the spectrum in [ppm] (Optional.  Default = 2.3)
-thkX=2; %slice thickness of x refocusing pulse [cm]
-thkY=2; %slice thickness of y refocusing pulse [cm]
+thkX=2; %slice thickness of x refocusing pulse [cm].  If pulse is GM, this must equal thkY.
+thkY=2; %slice thickness of y refocusing pulse [cm].  If pulse is GM, this must equal thkY.
 fovX=3; %size of the full simulation Field of View in the x-direction [cm]
 fovY=3; %size of the full simulation Field of View in the y-direction [cm]
 nX=16; %Number of grid points to simulate in the x-direction
@@ -62,9 +66,15 @@ gamma=42577000; %gyromagnetic ratio
 rfPulse=rf_resample(rfPulse,100);
 
 %sys=sysRef0ppm
-
-Gx=(rfPulse.tbw/(refTp/1000))/(gamma*thkX/10000); %[G/cm]
-Gy=(rfPulse.tbw/(refTp/1000))/(gamma*thkY/10000); %[G/cm]
+if ~rfPulse.isGM
+    Gx=(rfPulse.tbw/(refTp/1000))/(gamma*thkX/10000); %[G/cm]
+    Gy=(rfPulse.tbw/(refTp/1000))/(gamma*thkY/10000); %[G/cm]
+else
+    %Gradient modulated pulse
+    %1.  Calculating the unitless scaling factor for the GM waveform.
+    Gx=(rfPulse.tthk/refTp/1000)/thkX;
+    Gy=(rfPulse.tthk/refTp/1000)/thkY;
+end
 
 %Initialize structures:
 out_posxy_rpc=cell(length(x),length(y),length(ph1));
