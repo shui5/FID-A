@@ -66,9 +66,9 @@
 
 function out = sim_sLASER_shaped(n,sw,Bfield,linewidth,sys,te,RF,tp,dx,dy,Gx,Gy,ph1,ph2,ph3,ph4,flipAngle,centreFreq)
 
-if nargin<21
+if nargin<18
     centreFreq=2.3;
-    if nargin<20
+    if nargin<17
         flipAngle=180;
     end
 end
@@ -76,8 +76,8 @@ end
 %Check if this is a gradient modulated pulse.  If so, scale the GM functions
 % according to Gx and Gy, and then set Gx and Gy both equal to zero:
 if RF.isGM
-    RFX=rf_gradScale(RF,Gx);
-    RFY=rf_gradScale(RF,Gy);
+    RFX=rf_scaleGrad(RF,Gx);
+    RFY=rf_scaleGrad(RF,Gy);
     Gx=0;
     Gy=0;
 else

@@ -43,13 +43,13 @@ thkX=2; %slice thickness of x refocusing pulse [cm].  If pulse is GM, this must 
 thkY=2; %slice thickness of y refocusing pulse [cm].  If pulse is GM, this must equal thkY.
 fovX=3; %size of the full simulation Field of View in the x-direction [cm]
 fovY=3; %size of the full simulation Field of View in the y-direction [cm]
-nX=16; %Number of grid points to simulate in the x-direction
-nY=16; %Number of grid points to simulate in the y-direction
+nX=8; %Number of grid points to simulate in the x-direction
+nY=8; %Number of grid points to simulate in the y-direction
 te=135;         %sLASER total echo time [ms]
-ph1=[0 0 0 0];  %phase cycling scheme of first refocusing pulse
-ph2=[0 0 90 90]; %phase cycling scheme of second refocusing pulse
-ph3=[0 0 0 0]; %phase cycling scheme of third refocusing pulse
-ph4=[0 90 0 90]; %phase cycling scheme of fourth refocusing pulse
+ph1=[0 0 0 0];  %phase cycling scheme of first refocusing pulse (in degrees)
+ph2=[0 0 90 90]; %phase cycling scheme of second refocusing pulse (in degrees)
+ph3=[0 0 0 0]; %phase cycling scheme of third refocusing pulse (in degrees)
+ph4=[0 90 0 90]; %phase cycling scheme of fourth refocusing pulse (in degrees)
 
 % OUTPUTS:
 % out       = simulated spectrum, in FID-A structure format, using PRESS 
@@ -72,8 +72,8 @@ if ~rfPulse.isGM
 else
     %Gradient modulated pulse
     %1.  Calculating the unitless scaling factor for the GM waveform.
-    Gx=(rfPulse.tthk/refTp/1000)/thkX;
-    Gy=(rfPulse.tthk/refTp/1000)/thkY;
+    Gx=(rfPulse.tthk/(refTp/1000))/thkX;
+    Gy=(rfPulse.tthk/(refTp/1000))/thkY;
 end
 
 %Initialize structures:
@@ -93,7 +93,7 @@ parfor X=1:length(x)
             disp(['Executing X-position ' num2str(X) ' of ' num2str(length(x)) '; Y-position ' num2str(Y) ...
                 ' of ' num2str(length(y)) '; Phase cycle position ' num2str(m) ' of ' num2str(length(ph1)) '!!' ]);
             out_posxy_rpc{X}{Y}{m}=sim_sLASER_shaped(n,sw,Bfield,lw,sys,te,...
-              rfPulse,refTp,x(X),y(Y),Gx,Gy,ph1(m),ph2(m),ph3(m),ph4(m),centreFreq);
+              rfPulse,refTp,x(X),y(Y),Gx,Gy,ph1(m),ph2(m),ph3(m),ph4(m),flipAngle,centreFreq);
             if m==1 
                  out_posxy{X}{Y}=out_posxy_rpc{X}{Y}{m};
              elseif m==2 || m==3

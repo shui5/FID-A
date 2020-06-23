@@ -74,7 +74,7 @@ end
 
 for m=1:length(H) %JN - Looping through the parts of the spin system:
     excite=zeros(2^H(m).nspins,2^H(m).nspins);
-    Rz=zeros(2^H.nspins,2^H.nspins);
+    Rz=zeros(2^H(m).nspins,2^H(m).nspins);
     for n=1:H(m).nspins
         if H(m).shifts(n)>=30
             alpha=0;
@@ -84,13 +84,9 @@ for m=1:length(H) %JN - Looping through the parts of the spin system:
         excite=excite+alpha*H(m).Ix(:,:,n);
         Rz=Rz+(phase*pi/180)*H(m).Iz(:,:,n);
     end
-    d_out{m} = expm(-1i * Rz) * ...
-        expm(-1i * excite) * ...
-        expm(-1i * -Rz) * ...
-        d_in{m} * ...
-        expm(1i * -Rz) * ...
-        expm(1i * excite) * ...
-        expm(1i * Rz);
+    p=expm(1*Rz);
+    q=expm(1*excite);
+    d_out{m}= p' * q' * p * d_in{m} * p' * q * p; 
 end
     
 

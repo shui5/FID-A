@@ -77,14 +77,14 @@ if ~rfPulse.isGM
 else
     %Gradient modulated pulse
     %1.  Calculating the unitless scaling factor for the GM waveform.
-    Gx=(rfPulse.tthk/refTp/1000)/thkX;
-    Gy=(rfPulse.tthk/refTp/1000)/thkY;
+    Gx=(rfPulse.tthk/(refTp/1000))/thkX;
+    Gy=(rfPulse.tthk/(refTp/1000))/thkY;
 end
 
 %Initialize structures:
 % out_posxy_rpc=cell(length(x),length(y),length(ph1));
 out_posx_rpc =cell(length(x),length(ph1));
-d=cell(length((ph1)));
+d=cell(length((ph1))); %Initialize a cell for the dentity matrix, with elements for each phase cycle;
 
 %loop through space: Don't forget to initialize the parallel processing
 %toolbox workers using 'matlabpool open N' (for N workers, 12 max).
@@ -95,7 +95,7 @@ parfor X=1:length(x)
     for m=1:length(ph1)
         disp(['Executing X-position ' num2str(X) ...
             '; Phase cycle position ' num2str(m) ' of ' num2str(length(ph1)) '!!' ]);
-        out_posx_rpc{X}{m}=sim_sLASER_shaped_Ref1(Bfield,sys,te,rfPulse,refTp,x(X),Gx,ph1(m),ph2(m),centreFreq);
+        out_posx_rpc{X}{m}=sim_sLASER_shaped_Ref1(Bfield,sys,te,rfPulse,refTp,x(X),Gx,ph1(m),ph2(m),flipAngle,centreFreq);
 %                            sim_sLASER_shaped_Ref1(Bfield,sys,te,RF,       tp,  dx, Gx,ph1,   ph2,  centreFreq)
     end
 end
@@ -118,7 +118,7 @@ parfor Y=1:length(y) %Use this if you do have the MATLAB parallel processing too
     for m=1:length(ph1)
         disp(['Executing Y-position ' num2str(Y) ...
             '; Phase cycle position ' num2str(m) ' of ' num2str(length(ph1)) '!!' ]);
-        out_posy_rpc{Y}{m}=sim_sLASER_shaped_Ref2(d{m},n,sw,Bfield,lw,sys,te,rfPulse,refTp,y(Y),Gy,ph3(m),ph4(m),centreFreq);
+        out_posy_rpc{Y}{m}=sim_sLASER_shaped_Ref2(d{m},n,sw,Bfield,lw,sys,te,rfPulse,refTp,y(Y),Gy,ph3(m),ph4(m),flipAngle,centreFreq);
 %                            sim_sLASER_shaped_Ref2(d,   n,sw,Bfield,linewidth,sys,te,RF,       tp, dy,  Gy,ph3,    ph4,  centreFreq)
     end
 end
@@ -156,9 +156,9 @@ figure(1),plot(out.ppm,out.specs*exp(1i*-0*pi/180)),xlim([0 4.5])
 %% Simulate in X-direction only
 function d = sim_sLASER_shaped_Ref1(Bfield,sys,te,RF,tp,dx,Gx,ph1,ph2,flipAngle,centreFreq)
 
-if nargin<21
+if nargin<11
     centreFreq=2.3;
-    if nargin<20
+    if nargin<10
         flipAngle=180;
     end
 end
@@ -199,9 +199,9 @@ end
 %% Simulate in Y-direction only
 function out = sim_sLASER_shaped_Ref2(d,n,sw,Bfield,linewidth,sys,te,RF,tp,dy,Gy,ph3,ph4,flipAngle,centreFreq)
 
-if nargin<21
+if nargin<15
     centreFreq=2.3;
-    if nargin<20
+    if nargin<14
         flipAngle=180;
     end
 end
